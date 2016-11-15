@@ -62,8 +62,6 @@ if ($myWindowsPrincipal.IsInRole($adminRole))
 }
 else
 {
-    
-
     $process = New-Object System.Diagnostics.Process
     $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
 
