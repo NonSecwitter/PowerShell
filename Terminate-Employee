@@ -1,3 +1,13 @@
+# This is a fairly indepth script that automates the management of terminated employees. #
+# Currently, it is capable of removing user mailboxes and moving redirected folders to   #
+# a new location. The script is designed to allow for changes within the network without #
+# requiring additional coding. For example, folder redirection targets are derived from  #
+# Group Policy settings, and available exchange servers are pulled from Active Directory #
+
+# Updates will be made as needed. Please submit issues and pull requests if you have any #
+# trouble or suggestions                                                                 #
+# https://github.com/NonSecwitter/PowerShell/blob/master/Terminate-Employee              #
+
 clear
 
 # First, determine where Powershell thinks it is running the script from. #
