@@ -41,7 +41,7 @@ if (!$ScriptPath.StartsWith("\\"))
 
 $myWindowsID 		= [System.Security.Principal.WIndowsIdentity]::GetCurrent()
 $myWindowsPrincipal	= New-Object System.Security.Principal.WindowsPrincipal($myWindowsID)
-$adminRole			= [System.Security.Principal.WindowsBuiltInRole]::Administrator
+$adminRole		= [System.Security.Principal.WindowsBuiltInRole]::Administrator
 if ($myWindowsPrincipal.IsInRole($adminRole))
 {
 	$Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)"
@@ -50,11 +50,11 @@ if ($myWindowsPrincipal.IsInRole($adminRole))
 else
 {
 	$newProcess = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
-    $newProcess.Arguments = "-ExecutionPolicy ByPass -File $ScriptPath -NoExit"
+	$newProcess.Arguments = "-ExecutionPolicy ByPass -File $ScriptPath -NoExit"
 	$newProcess.Verb = "runas"
 	[System.Diagnostics.Process]::Start($newProcess)
-    #Exit
-    Return
+    	#Exit
+    	Return
 }
 
 # What user are we terminating?                                               #
@@ -100,7 +100,7 @@ Write-Host "Looking for Folder Redirection settings from Group Policy"
 # Step 1)
 $userOU     = (((Get-ADUser $user.SamAccountName).DistinguishedName).Split(',',3))[2]
 
-#Step 2)
+# Step 2)
 $appliedGPs = (Get-GPInheritance -Target $userOU)
 $gpGUIDs    = $appliedGPs.InheritedGpoLinks.GpoId.Guid
 
