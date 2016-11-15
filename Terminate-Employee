@@ -8,6 +8,8 @@
 # trouble or suggestions                                                                 #
 # https://github.com/NonSecwitter/PowerShell/blob/master/Terminate-Employee              #
 
+Set-StrictMode -Version 2.0
+
 clear
 
 # First, determine where Powershell thinks it is running the script from. #
@@ -18,7 +20,18 @@ $ScriptPath = $myInvocation.InvocationName
 # with the M:\ syntax, so we need to find the UNC, strip the drive letter, #
 # and append the UNC.                                                      #
 
-if (!$ScriptPath.StartsWith("\\"))
+if ($ScriptPath.StartsWith("&"))
+{
+    $ScriptPath = ($myInvocation.Line).Split(" ")
+    $ScriptPath = $ScriptPath[-1]
+    $ScriptPath = $ScriptPath -replace "'",""
+}
+if ($ScriptPath.StartsWith("."))
+{
+    $ScriptPath = $ScriptPath.TrimStart(".")
+    $ScriptPath = (Get-Location).Path + $ScriptPath
+}
+if ($ScriptPath -match ".:\\.*")
 {
     $Drives = Gwmi Win32_LogicalDisk -Filter "DriveType = 4"
 
@@ -41,7 +54,7 @@ if (!$ScriptPath.StartsWith("\\"))
 
 $myWindowsID 		= [System.Security.Principal.WIndowsIdentity]::GetCurrent()
 $myWindowsPrincipal	= New-Object System.Security.Principal.WindowsPrincipal($myWindowsID)
-$adminRole		= [System.Security.Principal.WindowsBuiltInRole]::Administrator
+$adminRole			= [System.Security.Principal.WindowsBuiltInRole]::Administrator
 if ($myWindowsPrincipal.IsInRole($adminRole))
 {
 	$Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)"
@@ -49,12 +62,28 @@ if ($myWindowsPrincipal.IsInRole($adminRole))
 }
 else
 {
-	$newProcess = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
-	$newProcess.Arguments = "-ExecutionPolicy ByPass -File $ScriptPath -NoExit"
-	$newProcess.Verb = "runas"
-	[System.Diagnostics.Process]::Start($newProcess)
-    	#Exit
-    	Return
+    
+
+    $process = New-Object System.Diagnostics.Process
+    $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
+
+    $processStartInfo.UseShellExecute = $true	
+    $processStartInfo.Arguments = "-Command ""& {$ScriptPath}"" -ExecutionPolicy ByPass -NoExit -Sta"
+	$processStartInfo.Verb = "runas"
+    
+    $processStartInfo.ErrorDialog = $true
+
+    $process.StartInfo = $processStartInfo
+    $process.Start()
+    $process
+    if($process.HasExited)
+    {
+        $MyInvocation | select *
+        Get-Location
+    }
+
+    #Exit
+    Return
 }
 
 # What user are we terminating?                                               #
@@ -100,7 +129,7 @@ Write-Host "Looking for Folder Redirection settings from Group Policy"
 # Step 1)
 $userOU     = (((Get-ADUser $user.SamAccountName).DistinguishedName).Split(',',3))[2]
 
-# Step 2)
+#Step 2)
 $appliedGPs = (Get-GPInheritance -Target $userOU)
 $gpGUIDs    = $appliedGPs.InheritedGpoLinks.GpoId.Guid
 
