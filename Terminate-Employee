@@ -1,0 +1,276 @@
+clear
+
+# First, determine where Powershell thinks it is running the script from. #
+
+$ScriptPath = $myInvocation.InvocationName
+
+# If the location is a mapped drive, Powershell will not be able to run it #
+# with the M:\ syntax, so we need to find the UNC, strip the drive letter, #
+# and append the UNC.                                                      #
+
+if (!$ScriptPath.StartsWith("\\"))
+{
+    $Drives = Gwmi Win32_LogicalDisk -Filter "DriveType = 4"
+
+    $ScriptRoot = $ScriptPath.Split("\")
+    $ScriptRoot = $ScriptRoot[0]
+
+    foreach ($drive in $drives)
+    {
+        if($drive.DeviceID -eq $ScriptRoot)
+        {
+            $ScriptPath = $ScriptPath.Replace($ScriptRoot, $drive.ProviderName)
+        }
+    }
+}
+
+# Now that we have a script path in a format that is recognizable to Powershell,     #
+# we can determine whether we have admin privileges. If so, we'll just keep running. # 
+# If not, we'll prompt for elevated credentials and re-run the same script.          #
+# Recursion's fun, ain't it??? :)                                                    #
+
+$myWindowsID 		= [System.Security.Principal.WIndowsIdentity]::GetCurrent()
+$myWindowsPrincipal	= New-Object System.Security.Principal.WindowsPrincipal($myWindowsID)
+$adminRole			= [System.Security.Principal.WindowsBuiltInRole]::Administrator
+if ($myWindowsPrincipal.IsInRole($adminRole))
+{
+	$Host.UI.RawUI.WindowTitle = $myInvocation.MyCommand.Definition + "(Elevated)"
+	Clear-Host
+}
+else
+{
+	$newProcess = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
+    $newProcess.Arguments = "-ExecutionPolicy ByPass -File $ScriptPath -NoExit"
+	$newProcess.Verb = "runas"
+	[System.Diagnostics.Process]::Start($newProcess)
+    #Exit
+    Return
+}
+
+# What user are we terminating?                                               #
+# This area might need adjustment as additional special cases are discovered. #
+# For now, this removes spaces from names like "La Ha".                       #
+
+$fname = Read-Host -Prompt "Enter User's First Name"
+$lname = Read-Host -Prompt "Enter User's Last Name"
+
+$lname = $lname.Normalize()
+$lname = $lname.Replace(" ", "")
+
+$firstInitial = $fname[0]
+
+$wildCardName = "*$firstInitial*"
+
+for ($i = 0; $i -lt $lname.length; $i++)
+{
+    $wildCardName += $lname[$i]
+    $wildCardName += "*"
+}
+
+Write-Host "Looking for user in Active Directory"
+
+$user = Get-ADUser -Filter * | where {$_.SamAccountName -like $wildCardName}
+$userName = $user.SamAccountName
+
+#####################################################################################
+############################## Move Redirected Folders ##############################
+#####################################################################################
+
+# Redirected folder targets are defined by GPO, so I'm going there to build a list  #
+# of folders that need to be moved as follows:                                      #
+#                                                                                   #
+# 1) Get User OU                                                                    #
+# 2) Get all applied and inherited GPO's for that OU and convert to .xml            #
+# 3) Parse the GPO for folder redirection targets                                   #
+# 4) Parse that list and manipulate to get meaningul UNC paths                      #
+# 5) Execute the move                                                               #
+
+Write-Host "Looking for Folder Redirection settings from Group Policy"
+
+# Step 1)
+$userOU     = (((Get-ADUser $user.SamAccountName).DistinguishedName).Split(',',3))[2]
+
+#Step 2)
+$appliedGPs = (Get-GPInheritance -Target $userOU)
+$gpGUIDs    = $appliedGPs.InheritedGpoLinks.GpoId.Guid
+
+foreach ($gpGUID in $gpGUIDs)
+{
+    Get-GPOReport -Guid $gpGUID -ReportType Xml -Path .\$gpGUID.xml
+}
+
+# Step 3)
+[System.Collections.ArrayList] $paths = $null
+foreach ($gpGUID in $gpGUIDs)
+{
+    [XML] $xmlRSOP = Get-Content .\$gpGUID.xml
+    $paths += $xmlRSOP.SelectNodes("//*[local-name()='DestinationPath']").InnerText
+}
+
+# Step 4)
+foreach ($path in $paths.ToArray())
+{
+    if (($path -eq $null) -or (!$path.StartsWith("\\")))
+    {
+        $paths.Remove($path)
+    }
+    else
+    {
+        $paths[$paths.IndexOf($path)] = $path -replace "%USERNAME%",$user.SamAccountName
+    }
+}
+
+$paths = $paths | Select -Unique
+
+# Step 5)
+Write-Host -BackgroundColor Red -ForegroundColor Yellow "Use UNC format (\\server\share\)"
+$destination = Read-Host "Enter destination for terminated users' folders" 
+
+# We need to make sure the path is to the root of the share, not \\server\share\desireduserfolder" #
+# In the process, we'll make sure the server is online                                             #
+
+while (((Get-Item $destination -ErrorAction SilentlyContinue) -eq $null) -and ($pathChoice -ne 1) -and ($pathChoice -ne 2))
+{
+    $shareHost = ($destination.Replace("\\", "").Split("\"))[0]
+
+    $ping = New-Object System.Net.NetworkInformation.Ping
+
+    $pingReply = Test-Connection -Quiet $shareHost -Count 2
+
+    if (!$pingReply)
+    {
+        Write-Host "Host offline." -BackgroundColor Blue -ForegroundColor Cyan
+        Write-Host -BackgroundColor Red -ForegroundColor Yellow "Use UNC format (\\server\share\)"
+        $destination = Read-Host "Enter destination for terminated users' folders"
+    }
+    else
+    {
+        $testPath = $destination
+        $pathElements = ($destination.Replace("\\", "").Split("\"))
+        for ($i = $pathElements.Count -1; $i -ge 0; $i--)
+        {
+            $toRemove = $pathElements[$i]
+            $testPath = $testPath -replace "[\\]*$toRemove[\\]*",""
+            $newPath = Get-Item $testPath -ErrorAction SilentlyContinue
+            if ($newPath -ne $null)
+            {
+                Write-Host "You entered: $destination, but this path cannot be found"-BackgroundColor Red -ForegroundColor Yellow
+                Write-Host "Would you like to save at:" -BackgroundColor Red -ForegroundColor Yellow
+                Write-Host "1) $destination\$userName"
+                Write-Host "2) $newPath\$username"
+                Write-Host "3) None of the above"
+                $pathChoice = Read-Host "Enter Selection"
+
+                switch ($pathChoice)
+                {
+                   1 
+                    {
+                        $destination = "$destination\$userName"
+                    }
+                   2 
+                    {
+                        $destination = "$newPath\$userName"
+                    }
+                   3 
+                    {
+                        Write-Host -BackgroundColor Red -ForegroundColor Yellow "Use UNC format (\\server\share\)"
+                        $destination = Read-Host "Enter destination for terminated users' folders"
+                        break
+                    }
+                    default
+                    {
+                        Write-Host "Invalid Selection"
+                    }
+                }
+            }
+            
+            if (($pathChoice -eq 1) -or ($pathChoice -eq 2))
+            {
+                break
+            }
+        } 
+    }
+}
+
+Move-Item $paths -Destination $destination -WhatIf
+
+#####################################################################################
+################################### Remove-Mailbox ##################################
+#####################################################################################
+
+# By pulling a list of Exchange Servers from AD, I can avoid hard coding server names #
+Function Get-ExchangeServerFromAD
+{
+    $ADSite      = [System.DirectoryServices.ActiveDirectory.ActiveDirectorySite]
+    $siteDN      = $ADSite::GetComputerSite().GetDirectoryEntry().distinguishedName
+    $configNC    = ([ADSI]"LDAP://RootDse").configurationNamingContext
+    $search      = New-Object DirectoryServices.DirectorySearcher([ADSI]"LDAP://$configNC")
+    $objectClass = "objectClass=msExchExchangeServer"
+    $version     = "versionNumber>=0"
+    $site        = "msExchServerSite=$siteDN"
+
+    $search.Filter   = "(&($objectClass)($version)($site))"
+    $search.PageSize = 1000
+
+    [void] $search.PropertiesToLoad.Add("name")
+    [void] $search.PropertiesToLoad.Add("msexchcurrentserverroles")
+    [void] $search.PropertiesToLoad.Add("networkaddress")
+
+    $search.FindAll() | %{
+        New-Object PSObject -Property @{
+            Name = $_.Properties.name[0]
+            FQDN = $_.Properties.networkaddress |
+                %{if ($_ -match "ncacn_ip_tcp") {$_.split(":")[1]}}
+            Roles = $_.Properties.msexchcurrentserverroles[0]
+        }
+    }
+}
+
+
+
+# Establish a connection to the exchange server's powershell module #
+
+
+Write-Host "Looking for Exchange Server"
+
+$exchangeServers = Get-ExchangeServerFromAD
+$fqdn = $exchangeServers[0].FQDN
+
+
+Write-Host "Connecting to Exchange Server $fqdn"
+
+$session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$fqdn/Powershell -Authentication Kerberos
+$void = Import-PSSession $Session -DisableNameChecking
+
+# Create an alias filter and get a list of potential mailboxes based on first and last name. #
+
+Write-Host "Looking for user's mailbox"
+
+[array] $mailboxes = Get-Mailbox | Where-Object {$_.alias -like $wildCardName}
+
+
+# Now, the list of potential mailboxes is presented to make sure we remove the #
+# appropriate user.                                                            #
+
+Write-Host "!!!!!!!!! Verify and select the appropriate mailbox. !!!!!!!!!" -BackgroundColor Red -ForegroundColor Yellow
+Write-Host ""
+Write-Host "This will delete the Active Directory user and the users mailbox will be flagged for purging after 30 days." -BackgroundColor Red -ForegroundColor Yellow
+Write-Host ""
+Write-Host "Mailboxes can be reconnected to users in the Exchange Management Console within that 30 day window." -BackgroundColor Red -ForegroundColor Yellow
+Write-Host ""
+
+foreach ($mailbox in $mailboxes)
+{
+   Write-Host ($mailboxes.IndexOf($mailbox) +1) "`t-" $mailbox.Name
+}
+
+# Select the appropriate mailbox #
+Write-Host
+$mailboxToDelete  = Read-Host -Prompt "Enter selection"
+$mailboxToDelete = $mailboxes[$mailboxToDelete - 1]
+
+Remove-Mailbox $mailboxToDelete.DisplayName -WhatIf
+
+
+pause
+Remove-PSSession $session
