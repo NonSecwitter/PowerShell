@@ -150,13 +150,18 @@ foreach ($gpGUID in $gpGUIDs)
 # Step 4)
 foreach ($path in $paths.ToArray())
 {
-    if (($path -eq $null) -or (!$path.StartsWith("\\")))
-    {
-        $paths.Remove($path)
-    }
-    else
+    if ($path.ToString() -match "(^.:\\.*)")   #  (^.:\\.*)|(^[\\]*.*) << for local redirect
     {
         $paths[$paths.IndexOf($path)] = $path -replace "%USERNAME%",$user.SamAccountName
+
+        if(Get-Item $path.ToString() -ErrorAction SilentlyContinue -eq $null)
+        {
+            $paths.Remove($path)
+        }
+    }
+    else
+    {      
+        $paths.Remove($path)
     }
 }
 
@@ -265,7 +270,7 @@ foreach ($path in $paths)
 {
     $redirectedFolder = $path.ToString().Split("\")[-1]
     $finalDestination = "$destination\$redirectedFolder"
-    Move-Item $path -Destination $finalDestination -WhatIf
+    Move-Item $path -Destination $finalDestination
 }
 #####################################################################################
 ################################### Remove-Mailbox ##################################
@@ -343,7 +348,7 @@ while (!(($mailboxSelection -gt 0) -and ($mailboxSelection -le $mailboxes.Count)
     $mailboxToDelete = $mailboxes[$mailboxSelection - 1]
 }
 
-Remove-Mailbox $mailboxToDelete.DisplayName -WhatIf
+Remove-Mailbox $mailboxToDelete.DisplayName
 
 
 pause
