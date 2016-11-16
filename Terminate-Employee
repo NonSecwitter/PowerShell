@@ -10,8 +10,6 @@
 
 Set-StrictMode -Version 2.0
 
-clear
-
 # First, determine where Powershell thinks it is running the script from. #
 
 $ScriptPath = $myInvocation.InvocationName
@@ -62,14 +60,14 @@ if ($myWindowsPrincipal.IsInRole($adminRole))
 }
 else
 {
+    $ScriptPath = $ScriptPath.ToString()
+
     $process = New-Object System.Diagnostics.Process
     $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
 
     $processStartInfo.UseShellExecute = $true	
-    $processStartInfo.Arguments = "-Command ""& {$ScriptPath}"" -ExecutionPolicy ByPass -NoExit -Sta"
+    $processStartInfo.Arguments = "-File $ScriptPath -ExecutionPolicy ByPass -NoExit -Sta"
 	$processStartInfo.Verb = "runas"
-    
-    $processStartInfo.ErrorDialog = $true
 
     $process.StartInfo = $processStartInfo
     $process.Start()
@@ -141,7 +139,12 @@ foreach ($gpGUID in $gpGUIDs)
 foreach ($gpGUID in $gpGUIDs)
 {
     [XML] $xmlRSOP = Get-Content .\$gpGUID.xml
-    $paths += $xmlRSOP.SelectNodes("//*[local-name()='DestinationPath']").InnerText
+    try
+    {
+        $paths += $xmlRSOP.SelectNodes("//*[local-name()='DestinationPath']").InnerText
+    }
+    catch{}
+
 }
 
 # Step 4)
@@ -276,7 +279,7 @@ $fqdn = $exchangeServers[0].FQDN
 
 Write-Host "Connecting to Exchange Server $fqdn"
 
-$session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$fqdn/Powershell -Authentication Kerberos
+$session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri http://$fqdn/Powershell
 $void = Import-PSSession $Session -DisableNameChecking
 
 # Create an alias filter and get a list of potential mailboxes based on first and last name. #
