@@ -70,8 +70,7 @@ else
 	$processStartInfo.Verb = "runas"
 
     $process.StartInfo = $processStartInfo
-    $process.Start()
-    $process
+    $null = $process.Start()
     if($process.HasExited)
     {
         $MyInvocation | select *
@@ -168,17 +167,18 @@ $paths = $paths | Select -Unique
 # Step 5)
 # If you want to streamline, change $null to whatever path you store terminated user files. #
 
-$destination = $null
+$destination = "\\srv2000-03\TerminatedUsers"
 if ($destination -eq $null)
 {
     Write-Host -BackgroundColor Red -ForegroundColor Yellow "Use UNC format (\\server\share)"
     $destination = Read-Host "Enter destination for terminated users' folders"    
 }
 $destination = $destination.TrimEnd("\")
-    
+
 # We need to make sure the path is to the root of the share, not \\server\share\desireduserfolder" #
 # In the process, we'll make sure the server is online                                             #
 
+Write-Host "Looking for destination folder"
 $destFolder = Get-Item $destination -ErrorAction SilentlyContinue
 $foundFolder = $null
 while (($destFolder -eq $null) -and ($foundFolder -eq $null))
@@ -224,11 +224,11 @@ $pathChoice = $null
 while ($pathChoice -eq $null)
 {
     Write-Host "Select and verify destination:" -BackgroundColor Red -ForegroundColor Yellow
-    Write-Host "1) $foundFolder\$dstFolderName"
+    Write-Host "1) $destination\$dstFolderName"
 
-    if ($foundFolder -ne $destination)
+    if ($foundFolder -ne $null)
     {
-        Write-Host "2) $destination\$dstFolderName"
+        Write-Host "2) $foundFolder\$dstFolderName"
     }
 
     #Write-Host "3) Enter a different path"
@@ -239,11 +239,11 @@ while ($pathChoice -eq $null)
     {
        1 
         {
-            $destination = "$newPath\$dstFolderName"
+            $destination = "$destination\$dstFolderName"
         }
        2 
         {
-            $destination = "$destination\$dstFolderName"
+            $destination = "$foundFolder\$dstFolderName"
         }
        3 
         {
@@ -261,9 +261,12 @@ while ($pathChoice -eq $null)
     }
 }
 
-
-Move-Item $paths -Destination $destination -WhatIf
-
+foreach ($path in $paths)
+{
+    $redirectedFolder = $path.ToString().Split("\")[-1]
+    $finalDestination = "$destination\$redirectedFolder"
+    Move-Item $path -Destination $finalDestination -WhatIf
+}
 #####################################################################################
 ################################### Remove-Mailbox ##################################
 #####################################################################################
@@ -332,9 +335,13 @@ foreach ($mailbox in $mailboxes)
 }
 
 # Select the appropriate mailbox #
-Write-Host
-$mailboxToDelete  = Read-Host -Prompt "Enter selection"
-$mailboxToDelete = $mailboxes[$mailboxToDelete - 1]
+$mailboxSelection = 0
+while (!(($mailboxSelection -gt 0) -and ($mailboxSelection -le $mailboxes.Count)))
+{
+    Write-Host
+    $mailboxSelection  = Read-Host -Prompt "Enter selection"
+    $mailboxToDelete = $mailboxes[$mailboxSelection - 1]
+}
 
 Remove-Mailbox $mailboxToDelete.DisplayName -WhatIf
 
