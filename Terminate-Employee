@@ -148,13 +148,17 @@ foreach ($gpGUID in $gpGUIDs)
 
 
 # Step 4)
+$paths.Remove("")
+
 foreach ($path in $paths.ToArray())
 {
-    if ($path.ToString() -match "(^.:\\.*)")   #  (^.:\\.*)|(^[\\]*.*) << for local redirect
+
+
+    if ($path.ToString() -match "(^[\\]*.*)")   #  (^.:\\.*)|(^[\\]*.*) << for local redirect
     {
         $paths[$paths.IndexOf($path)] = $path -replace "%USERNAME%",$user.SamAccountName
 
-        if(Get-Item $path.ToString() -ErrorAction SilentlyContinue -eq $null)
+        if((Get-Item $path.ToString() -ErrorAction SilentlyContinue) -eq $null)
         {
             $paths.Remove($path)
         }
@@ -223,7 +227,11 @@ while (($destFolder -eq $null) -and ($foundFolder -eq $null))
 
 
 $date = Get-Date
-$dstFolderName = $userName + " Y" + $date.Year + "-M" + $date.Month + "-D" + $date.Day
+$year = $date.Year
+$month = Get-Date -Format 'MMM'
+$day = $date.Day
+
+$dstFolderName = "$year$month$day~$userName"
 
 $pathChoice = $null
 while ($pathChoice -eq $null)
@@ -270,8 +278,28 @@ foreach ($path in $paths)
 {
     $redirectedFolder = $path.ToString().Split("\")[-1]
     $finalDestination = "$destination\$redirectedFolder"
-    Move-Item $path -Destination $finalDestination
+
+    $theMOVE = "Robocopy.exe /E /MOVE /R:0 /COPY:DAT /MT:4 /B /NFL /XJ /XJD /XJF ""$path"" ""$finalDestination"""
+    Invoke-Expression $theMOVE
 }
+
+$redirectRoot = $paths[0].ToString() -split $user.SamAccountName
+$userName = $user.SamAccountName
+$redirectRoot = $redirectRoot[0]
+$redirectRoot = "$redirectRoot$userName"
+
+$redirectEmpty = (Get-ChildItem $redirectRoot) -eq $null
+
+if ($redirectEmpty)
+{
+    Remove-Item $redirectRoot
+}
+else
+{
+    Write-Host -ForegroundColor Yellow -BackgroundColor Red "Something Went Wrong. Source Folder Not Empy"
+}
+
+
 #####################################################################################
 ################################### Remove-Mailbox ##################################
 #####################################################################################
@@ -348,7 +376,10 @@ while (!(($mailboxSelection -gt 0) -and ($mailboxSelection -le $mailboxes.Count)
     $mailboxToDelete = $mailboxes[$mailboxSelection - 1]
 }
 
-Remove-Mailbox $mailboxToDelete.DisplayName
+$mailboxToDelete = $mailboxToDelete.SimpleDisplayName.ToString()
+
+Remove-Mailbox $mailboxToDelete
+Get-MailboxDatabase | Clean-MailboxDatabase
 
 
 pause
