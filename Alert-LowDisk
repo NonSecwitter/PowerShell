@@ -1,0 +1,39 @@
+#
+# Variables for volume selection 
+#
+$driveType   = "Fixed"     #logical drive type
+$driveLetter = "C","E"
+$alertThreshold = 10       #will alert below this %
+
+
+
+#
+# Variables for e-mail notification. 
+#
+$mailFrom    = ""
+$mailTo      = ""
+$mailUser    = ""
+$mailPass    = ""
+$mailServer  = ""
+$mailSubject = "Low Disk Space"
+$mailBody    = ""
+$textPass    = ""
+
+$securePass  = ConvertTo-SecureString $textPass -AsPlainText -Force
+$cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
+
+
+$volumes = Get-Volume -DriveLetter $driveLetter |
+    Where-Object { $_.DriveType -in $driveType } |
+    select DriveLetter, FileSystemLabel, DriveType, OperationalStatus, HealthStatus, FileSystem,`
+     @{Name="PercentFree";Expression={(100*($_.SizeRemaining/$_.Size))}}
+
+$mailBody = $volumes | Out-String
+
+if($volumes.PercentFree -lt $alertThreshold)
+{
+    Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo
+}
+
+
+
