@@ -17,6 +17,14 @@ $mailPass    = ""
 $mailServer  = ""
 $mailSubject = "Low Disk Space"
 
+
+
+##########################################################################################
+################# You shouldn't need to edit anything below here. ########################
+##########################################################################################
+
+
+
 $securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
 $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
 
