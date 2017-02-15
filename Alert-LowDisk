@@ -16,7 +16,7 @@ $mailUser    = ""
 $mailPass    = ""
 $mailServer  = ""
 $mailSubject = "Low Disk Space"
-
+$mailBody    = "One or more disks is low on space."
 
 
 ##########################################################################################
@@ -34,7 +34,7 @@ $volumes = Get-Volume -DriveLetter $driveLetter |
     select DriveLetter, FileSystemLabel, DriveType, OperationalStatus, HealthStatus, FileSystem,`
      @{Name="PercentFree";Expression={(100*($_.SizeRemaining/$_.Size))}}
 
-$mailBody = $volumes | Out-String
+$mailBody += $volumes | Out-String
 
 if($volumes.PercentFree -lt $alertThreshold)
 {
