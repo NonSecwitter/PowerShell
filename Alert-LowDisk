@@ -16,7 +16,6 @@ $mailUser    = ""
 $mailPass    = ""
 $mailServer  = ""
 $mailSubject = "Low Disk Space"
-$mailBody    = ""
 $textPass    = ""
 
 $securePass  = ConvertTo-SecureString $textPass -AsPlainText -Force
