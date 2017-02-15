@@ -16,7 +16,7 @@ $mailUser    = ""
 $mailPass    = ""
 $mailServer  = ""
 $mailSubject = "Low Disk Space"
-$mailBody    = "One or more disks is low on space."
+$mailBody    = "One or more disks is low on space.`r`n`r`n" + "System: $env:COMPUTERNAME"
 
 
 ##########################################################################################
