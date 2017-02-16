@@ -30,12 +30,12 @@ Param
         
     # logical drive type in comma separated array 
     # (0) Unknown
-    # (1) noroot
-    # (2) removable
-    # (3) local
-    # (4) network
-    # (5) cd
-    # (6) ramdisk
+    # (1) No Root Directory
+    # (2) Removable Disk
+    # (3) Local Disk
+    # (4) Network Drive
+    # (5) Compact Disk
+    # (6) RAM Disk
     $DriveType   = (3)
 
     #
