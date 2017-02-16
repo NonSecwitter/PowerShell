@@ -60,7 +60,7 @@ Param
 $securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
 $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
 
-$volumes = Get-WmiObject -ComputerName $ComputerName -Class Win32_LogicalDisk |
+$volumes = Get-CimInstance -ComputerName $ComputerName -Class CIM_LogicalDisk |
             Where-Object { $_.DriveType -in $DriveType} |
             select SystemName, DeviceID, VolumeName, Description, FileSystem,
             @{Name="PercentFree";Expression={(100*($_.FreeSpace/$_.Size))}}
