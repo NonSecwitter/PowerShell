@@ -2,6 +2,8 @@
 # Checks free space on logical drives as % of free space remaining. #
 # Sends E-Mail alert if free space is below specified threshold.    #
 # Be sure to specify e-mail related variables below.                #
+#                                                                   #
+# Author and Copyright holder: Jonathon Anderson                    #
 #####################################################################
 
 [CmdletBinding()]
