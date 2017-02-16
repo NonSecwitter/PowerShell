@@ -3,6 +3,9 @@
 # Sends E-Mail alert if free space is below specified threshold.    #
 # Be sure to specify e-mail related variables below.                #
 #                                                                   #
+# Based on WMI Object Win32_LogicalDisk Class                       #
+# https://msdn.microsoft.com/en-us/library/aa394173(v=vs.85).aspx   #
+#                                                                   #
 # Author and Copyright holder: Jonathon Anderson                    #
 #####################################################################
 
