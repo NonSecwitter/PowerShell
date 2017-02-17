@@ -41,11 +41,15 @@ Param
     #
     # Variables for e-mail notification. 
     #
+    # If your mail server requires TLS, specify port 587 (TLS) or 465 (less secure SSL)
+    # otherwise, leave it blank.
+    #
     $mailFrom    = ""
     $mailTo      = ""
     $mailUser    = ""
     $mailPass    = ""
     $mailServer  = ""
+    $mailPort    = ""
     $mailSubject = "Low Disk Space"
     $mailBody    = "One or more disks is low on space.`r`n`r`n" + "System: $ComputerName"
 
@@ -54,12 +58,10 @@ Param
 ################# You shouldn't need to edit anything below here. ########################
 ##########################################################################################
 
-
-
 $securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
 $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
 
-$volumes = Get-CimInstance -ComputerName $ComputerName -Class CIM_LogicalDisk |
+$volumes = Get-CimInstance -ComputerName $ComputerName -ClassName CIM_LogicalDisk |
             Where-Object { $_.DriveType -in $DriveType} |
             select SystemName, DeviceID, VolumeName, Description, FileSystem,
             @{Name="PercentFree";Expression={(100*($_.FreeSpace/$_.Size))}}
@@ -68,5 +70,12 @@ $mailBody += $volumes | Out-String
 
 if($volumes.PercentFree -lt $AlertBelowPercentFree)
 {
-    Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo
+    if ($mailPort -in (465,587))
+    {
+        Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo -Port $mailPort -UseSsl
+    }
+    else
+    {
+        Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo
+    }
 }
