@@ -71,7 +71,7 @@ $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$s
 $volumes = Get-CimInstance -ComputerName $ComputerName -ClassName CIM_LogicalDisk |
             Where-Object { $_.DriveType -in $DriveType} |
             select SystemName, DeviceID, VolumeName, Description, FileSystem,
-            @{Name="PercentFree";Expression={(100*($_.FreeSpace/$_.Size)).ToString().SubString(0,4)}}
+            @{Name="PercentFree";Expression={[decimal](100*($_.FreeSpace/$_.Size)).ToString().SubString(0,4)}}
 
 $mailBody += $volumes | Out-String
 
