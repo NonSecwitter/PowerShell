@@ -44,6 +44,9 @@ Param
     # If your mail server requires TLS, specify port 587 (TLS) or 465 (less secure SSL)
     # otherwise, leave it blank.
     #
+    # Note that if you use GMail, you need to "Enable Less Secure Apps" in your *ACCOUNT*
+    # settings. This is in the settings under your picture, not your mailbox settings.
+    #
     $mailFrom    = ""
     $mailTo      = ""
     $mailUser    = ""
