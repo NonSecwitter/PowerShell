@@ -27,6 +27,10 @@ Param
     #
     # Variables for volume selection 
     #
+    # This filtering may not work on non-windows systems.
+    # Microsoft derived a Win32_LogicalDisk class from CIM_LogicalDisk.
+    # Win32 version contains "DriveType" as below, but CIM does not.
+    #
         
     # logical drive type in comma separated array 
     # (0) Unknown
