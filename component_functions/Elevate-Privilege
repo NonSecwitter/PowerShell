@@ -11,15 +11,9 @@ if ($myWindowsPrincipal.IsInRole($adminRole))
 {
 	$Host.UI.RawUI.WindowTitle = "(Elevated)"+ $Host.UI.RawUI.WindowTitle
 	Clear-Host
-    while($true)
-    {
-    write-host 2
-    }
 }
 else
 {
-    Write-Host 1
-        
     # First, determine where Powershell thinks it is running the script from.  #
     #                                                                          #
     # PowerShell has a hard time recursively calling a script if the path      #
