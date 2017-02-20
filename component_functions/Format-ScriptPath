@@ -7,37 +7,36 @@
 # always be called recursively. This is particularly useful when you    #
 # want a script to prompt for privilege elevation and call itself.      #
 
-Function Format-ScriptPath { 
-    $null = .{
+$ScriptPath = $myInvocation.InvocationName
+$ScriptPath
 
-        $ScriptPath = $myInvocation.InvocationName
+if ($ScriptPath.StartsWith("&"))
+{
+    Write-Host 1
+    $ScriptPath = ($myInvocation.Line).Split(" ")
+    $ScriptPath = $ScriptPath[-1]
+    $ScriptPath = $ScriptPath -replace "'",""
+}
+elseif ($ScriptPath.StartsWith("."))
+{
+    Write-Host 2
+    $ScriptPath
+    $ScriptPath = $ScriptPath.TrimStart(".")
+    $ScriptPath = (Get-Location).Path + $ScriptPath
+}
+elseif ($ScriptPath -match ".:\\.*")
+{
+    Write-Host 3
+    $Drives = Gwmi Win32_LogicalDisk -Filter "DriveType = 4"
 
-        if ($ScriptPath.StartsWith("&"))
+    $ScriptRoot = $ScriptPath.Split("\")
+    $ScriptRoot = $ScriptRoot[0]
+
+    foreach ($drive in $drives)
+    {
+        if($drive.DeviceID -eq $ScriptRoot)
         {
-            $ScriptPath = ($myInvocation.Line).Split(" ")
-            $ScriptPath = $ScriptPath[-1]
-            $ScriptPath = $ScriptPath -replace "'",""
-        }
-        if ($ScriptPath.StartsWith("."))
-        {
-            $ScriptPath = $ScriptPath.TrimStart(".")
-            $ScriptPath = (Get-Location).Path + $ScriptPath
-        }
-        if ($ScriptPath -match ".:\\.*")
-        {
-            $Drives = Gwmi Win32_LogicalDisk -Filter "DriveType = 4"
-
-            $ScriptRoot = $ScriptPath.Split("\")
-            $ScriptRoot = $ScriptRoot[0]
-
-            foreach ($drive in $drives)
-            {
-                if($drive.DeviceID -eq $ScriptRoot)
-                {
-                    $ScriptPath = $ScriptPath.Replace($ScriptRoot, $drive.ProviderName)
-                }
-            }
+            $ScriptPath = $ScriptPath.Replace($ScriptRoot, $drive.ProviderName)
         }
     }
-    Return $ScriptPath
 }
