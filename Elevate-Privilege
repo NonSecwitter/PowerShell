@@ -1,0 +1,75 @@
+Set-StrictMode -Version 2.0
+
+Function Elevate-Privilege {
+
+    # First, determine where Powershell thinks it is running the script from. #
+
+    $ScriptPath = $myInvocation.InvocationName
+
+    # If the location is a mapped drive, Powershell will not be able to run it #
+    # with the M:\ syntax, so we need to find the UNC, strip the drive letter, #
+    # and append the UNC.                                                      #
+
+    if ($ScriptPath.StartsWith("&"))
+    {
+        $ScriptPath = ($myInvocation.Line).Split(" ")
+        $ScriptPath = $ScriptPath[-1]
+        $ScriptPath = $ScriptPath -replace "'",""
+    }
+    if ($ScriptPath.StartsWith("."))
+    {
+        $ScriptPath = $ScriptPath.TrimStart(".")
+        $ScriptPath = (Get-Location).Path + $ScriptPath
+    }
+    if ($ScriptPath -match ".:\\.*")
+    {
+        $Drives = Gwmi Win32_LogicalDisk -Filter "DriveType = 4"
+
+        $ScriptRoot = $ScriptPath.Split("\")
+        $ScriptRoot = $ScriptRoot[0]
+
+        foreach ($drive in $drives)
+        {
+            if($drive.DeviceID -eq $ScriptRoot)
+            {
+                $ScriptPath = $ScriptPath.Replace($ScriptRoot, $drive.ProviderName)
+            }
+        }
+    }
+
+    # Now that we have a script path in a format that is recognizable to Powershell,     #
+    # we can determine whether we have admin privileges. If so, we'll just keep running. # 
+    # If not, we'll prompt for elevated credentials and re-run the same script.          #
+    # Recursion's fun, ain't it??? :)                                                    #
+
+    $myWindowsID 		= [System.Security.Principal.WIndowsIdentity]::GetCurrent()
+    $myWindowsPrincipal	= New-Object System.Security.Principal.WindowsPrincipal($myWindowsID)
+    $adminRole			= [System.Security.Principal.WindowsBuiltInRole]::Administrator
+    if ($myWindowsPrincipal.IsInRole($adminRole))
+    {
+	    $Host.UI.RawUI.WindowTitle = "(Elevated)"+ $Host.UI.RawUI.WindowTitle
+	    Clear-Host
+    }
+    else
+    {
+        $ScriptPath = $ScriptPath.ToString()
+
+        $process = New-Object System.Diagnostics.Process
+        $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
+
+        $processStartInfo.UseShellExecute = $true	
+        $processStartInfo.Arguments = "-File $ScriptPath -ExecutionPolicy ByPass -NoExit -Sta"
+	    $processStartInfo.Verb = "runas"
+
+        $process.StartInfo = $processStartInfo
+        $null = $process.Start()
+        if($process.HasExited)
+        {
+            $MyInvocation | select *
+            Get-Location
+        }
+
+        #Exit
+        Return
+    }
+}
