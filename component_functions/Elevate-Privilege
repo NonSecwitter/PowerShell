@@ -1,14 +1,33 @@
 Set-StrictMode -Version 2.0
 
-Function Elevate-Privilege {
+# We can determine whether we have admin privileges. If so, we'll just keep running. # 
+# If not, we'll prompt for elevated credentials and re-run the same script.          #
+# Recursion's fun, ain't it??? :)                                                    #
 
-    # First, determine where Powershell thinks it is running the script from. #
+$myWindowsID 		= [System.Security.Principal.WIndowsIdentity]::GetCurrent()
+$myWindowsPrincipal	= New-Object System.Security.Principal.WindowsPrincipal($myWindowsID)
+$adminRole			= [System.Security.Principal.WindowsBuiltInRole]::Administrator
+if ($myWindowsPrincipal.IsInRole($adminRole))
+{
+	$Host.UI.RawUI.WindowTitle = "(Elevated)"+ $Host.UI.RawUI.WindowTitle
+	Clear-Host
+    while($true)
+    {
+    write-host 2
+    }
+}
+else
+{
+    Write-Host 1
+        
+    # First, determine where Powershell thinks it is running the script from.  #
+    #                                                                          #
+    # PowerShell has a hard time recursively calling a script if the path      #
+    # is formatted certain ways. Particularly, it does not handle network      #
+    # drives well (M: format masking \\ format) or running by double click     #
+    # (This prepends the ScriptPath with "&.\"                                 #
 
     $ScriptPath = $myInvocation.InvocationName
-
-    # If the location is a mapped drive, Powershell will not be able to run it #
-    # with the M:\ syntax, so we need to find the UNC, strip the drive letter, #
-    # and append the UNC.                                                      #
 
     if ($ScriptPath.StartsWith("&"))
     {
@@ -37,39 +56,23 @@ Function Elevate-Privilege {
         }
     }
 
-    # Now that we have a script path in a format that is recognizable to Powershell,     #
-    # we can determine whether we have admin privileges. If so, we'll just keep running. # 
-    # If not, we'll prompt for elevated credentials and re-run the same script.          #
-    # Recursion's fun, ain't it??? :)                                                    #
+    $ScriptPath = $ScriptPath.ToString()
 
-    $myWindowsID 		= [System.Security.Principal.WIndowsIdentity]::GetCurrent()
-    $myWindowsPrincipal	= New-Object System.Security.Principal.WindowsPrincipal($myWindowsID)
-    $adminRole			= [System.Security.Principal.WindowsBuiltInRole]::Administrator
-    if ($myWindowsPrincipal.IsInRole($adminRole))
+    $process = New-Object System.Diagnostics.Process
+    $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
+
+    $processStartInfo.UseShellExecute = $true	
+    $processStartInfo.Arguments = "-File $ScriptPath -ExecutionPolicy ByPass -NoExit -Sta"
+	$processStartInfo.Verb = "runas"
+
+    $process.StartInfo = $processStartInfo
+    $null = $process.Start()
+    if($process.HasExited)
     {
-	    $Host.UI.RawUI.WindowTitle = "(Elevated)"+ $Host.UI.RawUI.WindowTitle
-	    Clear-Host
+        $MyInvocation | select *
+        Get-Location
     }
-    else
-    {
-        $ScriptPath = $ScriptPath.ToString()
 
-        $process = New-Object System.Diagnostics.Process
-        $processStartInfo = New-Object System.Diagnostics.ProcessStartInfo "PowerShell"
-
-        $processStartInfo.UseShellExecute = $true	
-        $processStartInfo.Arguments = "-File $ScriptPath -ExecutionPolicy ByPass -NoExit -Sta"
-	    $processStartInfo.Verb = "runas"
-
-        $process.StartInfo = $processStartInfo
-        $null = $process.Start()
-        if($process.HasExited)
-        {
-            $MyInvocation | select *
-            Get-Location
-        }
-
-        #Exit
-        Return
-    }
+    #Exit
+    #Return
 }
