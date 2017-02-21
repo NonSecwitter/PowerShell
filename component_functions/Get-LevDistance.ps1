@@ -63,7 +63,7 @@ if ($Distance -eq -1)
                 { $cost = 1 }
             
             $GridAbove     = [int]$DistanceMatrix[($i-1),$j]
-            $GridLeft      = [int]$DistanceMatrix[$i, ($j-1)]
+            $GridLeft      = [int]$DistanceMatrix[$i,($j-1)]
             $GridAboveLeft = [int]$DistanceMatrix[($i-1),($j-1)]
             
             $TempMin = [System.Math]::Min((1+$GridAbove),(1+$GridLeft))
