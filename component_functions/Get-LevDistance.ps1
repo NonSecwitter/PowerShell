@@ -17,21 +17,14 @@ Param
     $CaseSensitive = $false
 )
 
-# Value to Return
 $Distance = -1
 
-
-# If either string is length = 0, the distance is
-# the length of the other string
-#
 if ($FirstWord.Length -eq 0)
     { $Distance = $SecondWord.Length }
 
 elseif ($SecondWord.Length -eq 0)
     { $Distance = $FirstWord.Length }
 
-
-# Begin processsing if neither word is empty
 if ($Distance -eq -1)
 {
 
@@ -41,9 +34,7 @@ if ($Distance -eq -1)
         $SecondWord = $SecondWord.ToLowerInvariant()
     }
 
-    # The Distance Grid stores data about the variation
-    # between both words
-    #
+    # The Distance Grid stores data about variation
     $DistanceMatrix = New-Object -Type 'Int32[,]'`
                   -Arg ($FirstWord.Length+1),
                        ($SecondWord.Length+1)
