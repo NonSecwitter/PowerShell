@@ -55,10 +55,8 @@ if ($Distance -eq -1)
 
     for($i = 1; $i -le $FirstWord.Length; $i++)
     {
-        #Write-Host 2
         for($j = 1; $j -le $SecondWord.Length; $j++)
         {
-            #Write-Host 3
             if($FirstWord[$i-1] -ceq $SecondWord[$j-1])
                 { $cost = 0 }
             else
