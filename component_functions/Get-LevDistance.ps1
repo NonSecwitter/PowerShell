@@ -1,4 +1,4 @@
-# FROM: https://www.codeproject.com/tips/102192/levenshtein-distance-in-windows-powershell #
+# Derived from: https://www.codeproject.com/tips/102192/levenshtein-distance-in-windows-powershell #
 
 [CmdletBinding()]
 Param 
