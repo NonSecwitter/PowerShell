@@ -1,3 +1,13 @@
+[CmdletBinding()]
+Param
+(
+    [Parameter(Mandatory=$True)]
+    $FirstName,
+
+    [Parameter(Mandatory=$False)]
+    $LastName = ""
+)
+
 Function Get-LevDistance 
 {
     [CmdletBinding()]
@@ -83,7 +93,8 @@ Function Get-UserList
     $firstInitial = $GivenName[0] + "*"
     $lastInitial  = $SurName[0] + "*"
 
-    return (Get-ADUser -Filter { (GivenName -like $firstInitial) -and ( SurName -like $lastInitial) })
+    return (Get-ADUser -Filter { ((GivenName -like $firstInitial) -and ( SurName -like $lastInitial)) -OR
+           ((GivenName -like $lastInitial) -and ( SurName -like $firstInitial)) })
 }
 
 Function Swap-ArrayElements
@@ -123,12 +134,31 @@ Function Order-UserList
         [Object]
         $LastName
     )
-    $distances = @(0)*$Users.Length
+    $Distances = @(0)*$Users.Length
+    $SearchName = $FirstName + $LastName
 
     for($i = 0; $i -lt $Users.Length; $i++)
     {
-        $distance =  Get-LevDistance $FirstName  $Users[$i].GivenName
-        $distance += Get-LevDistance $LastName   $Users[$i].Surname    
+        if (($FirstName -eq "") -OR ($LastName -eq ""))              
+        {                                                            
+            $ADName1 = $Users[$i].GivenName                          
+            $ADName2 = $Users[$i].SurName                            
+            $distance1 = Get-LevDistance $ADName1 $SearchName        
+            $distance2 = Get-LevDistance $ADName2 $SearchName        
+                                                                     
+            if($distance1 -le $distance2) { $distance = $distance1 } 
+            else { $distance = $distance2 }                          
+        }                                                            
+        else                                                         
+        {                                                            
+            $ADName1 = $Users[$i].GivenName + $Users[$i].Surname     
+            $ADName2 = $Users[$i].SurName + $Users[$i].Givenname     
+            $distance1 = Get-LevDistance $ADName1 $SearchName        
+            $distance2 = Get-LevDistance $ADName2 $SearchName        
+                                                                     
+            if($distance1 -le $distance2) { $distance = $distance1 } 
+            else { $distance = $distance2 }                          
+        }                                                            
 
         $Distances[$i] = $distance
     }
@@ -151,23 +181,31 @@ Function Order-UserList
 
 Function Find-ADUser
 {
-    $GivenName = Read-Host -Prompt "Enter User's First Name"
-    $SurName   = Read-Host -Prompt "Enter User's Last Name"
-    Clear-Host
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$True)]
+        $FirstName,
 
-    $Users = Get-UserList -GivenName $GivenName -SurName $SurName
+        [Parameter(Mandatory=$False)]
+        $LastName = ""
+    )
 
-    $Users = Order-UserList -Users $Users $GivenName $SurName
+    $Users = Get-UserList -GivenName $FirstName -SurName $LastName
+    $Users = Order-UserList -Users $Users $FirstName $LastName
 
     foreach ($User in $Users)
     {
         Write-Host ([array]::IndexOf($Users, $User)+1):: $User.Name
     }
-    Write-Host
-    $Selection = Read-Host "Select User"
-    $Selection -= 1
 
+    Write-Host
+
+    $Selection  = Read-Host "Select User"
+    $Selection -= 1
+    
     Return $Users[$Selection]
 }
 
-Find-ADUser
+
+Find-ADUser -FirstName $FirstName -LastName $LastName
