@@ -123,6 +123,7 @@ Function Order-UserList
         [Object]
         $LastName
     )
+    $distances = @(0)*$Users.Length
 
     for($i = 0; $i -lt $Users.Length; $i++)
     {
@@ -140,16 +141,24 @@ Function Order-UserList
             {             
                 Swap-ArrayElements ([ref]$Distances) $j $i
                 Swap-ArrayElements ([ref]$Users) $j $i
+
+                
             }
         }
     }
     Return $Users
 } 
 
+Function Find-ADUser
+{
+    $GivenName = Read-Host -Prompt "Enter User's First Name"
+    $SurName   = Read-Host -Prompt "Enter User's Last Name"
 
-$GivenName = Read-Host -Prompt "Enter User's First Name"
-$SurName = Read-Host -Prompt "Enter User's Last Name"
+    $Users = Get-UserList -GivenName $GivenName -SurName $SurName
 
-$Users = Get-UserList -GivenName $GivenName -SurName $SurName
+    $Users = Order-UserList -Users $Users $GivenName $SurName
 
-$Users = Order-UserList -Users $Users $GivenName $SurName
+    Return $Users
+}
+
+Find-ADUser
