@@ -153,12 +153,21 @@ Function Find-ADUser
 {
     $GivenName = Read-Host -Prompt "Enter User's First Name"
     $SurName   = Read-Host -Prompt "Enter User's Last Name"
+    Clear-Host
 
     $Users = Get-UserList -GivenName $GivenName -SurName $SurName
 
     $Users = Order-UserList -Users $Users $GivenName $SurName
 
-    Return $Users
+    foreach ($User in $Users)
+    {
+        Write-Host ([array]::IndexOf($Users, $User)+1):: $User.Name
+    }
+    Write-Host
+    $Selection = Read-Host "Select User"
+    $Selection -= 1
+
+    Return $Users[$Selection]
 }
 
 Find-ADUser
