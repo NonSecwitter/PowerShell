@@ -9,7 +9,7 @@ $myWindowsPrincipal	= New-Object System.Security.Principal.WindowsPrincipal($myW
 $adminRole			= [System.Security.Principal.WindowsBuiltInRole]::Administrator
 if ($myWindowsPrincipal.IsInRole($adminRole))
 {
-	$Host.UI.RawUI.WindowTitle = "(Elevated)"+ $Host.UI.RawUI.WindowTitle
+	$Host.UI.RawUI.WindowTitle = "(Elevated)"+ $myInvocation.ScriptName
 	Clear-Host
 }
 else
