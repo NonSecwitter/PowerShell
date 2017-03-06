@@ -8,5 +8,5 @@ Function Get-OU
         $Account
     )
 
-    Return ($Account.DistinguishedName -replace "^(?i).*?,(?=OU=)")
+    Return ($Account.DistinguishedName -replace "^.*?,?(?=OU=)")
 }
