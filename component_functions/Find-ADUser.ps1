@@ -78,11 +78,6 @@ Function Get-LevDistance
     Return $Distance
 }
 
-Function Get-UserList
-{
-    Return Get-ADUser -Filter * | Select-Object *, @{N='LevDistance'; E={""}}
-}
-
 Function Swap-ArrayElements
 {
     [CmdletBinding()]
@@ -183,7 +178,7 @@ Function Order-UserList
     }
 } 
 
-Function Generate-UserList
+Function Get-UserList
 {
     [CmdletBinding()]
     Param
@@ -195,7 +190,7 @@ Function Generate-UserList
         $LastName
     )
 
-    [System.Collections.ArrayList]$UserList = Get-UserList
+    [System.Collections.ArrayList]$UserList = Get-ADUser -Filter * | Select-Object *, @{N='LevDistance'; E={""}}
 
     Append-LevDistance -UserList ([ref]$UserList) -FirstName $FirstName -LastName $LastName
     Order-UserList     -UserList ([ref]$UserList)
@@ -235,7 +230,7 @@ Function Find-ADUser
         $LastName
     )
 
-    $UserList = Generate-UserList -FirstName $FirstName -LastName $LastName
+    $UserList = Get-UserList -FirstName $FirstName -LastName $LastName
     $User     = Select-User ([ref]$UserList)
 
     Return $User
