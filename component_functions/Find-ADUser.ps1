@@ -1,3 +1,5 @@
+Function Find-ADUser
+{
     [CmdletBinding()]
     Param
     (
@@ -199,6 +201,7 @@
         Append-LevDistance -UserList ([ref]$UserList) -FirstName $FirstName -LastName $LastName
         Order-UserList     -UserList ([ref]$UserList)
 
+
         Return $UserList
     }
 
@@ -211,23 +214,37 @@
             [ref]$UserList
         )
     
-        Write-Host
-        foreach ($User in $UserList.Value)
+        if($UserList.Value.Count -ne 1)
         {
-            Write-Host ([array]::IndexOf($UserList.Value, $User)+1):: $User.Name
+            Write-Host
+            foreach ($User in $UserList.Value)
+            {
+                Write-Host ([array]::IndexOf($UserList.Value, $User)+1):: $User.Name
+            }
+            Write-Host
+
+            $Selection  = (Read-Host "Select User") - 1
+            $samAccountName = $UserList.Value[$Selection].samAccountName
+
+            $User = Get-ADUser $samAccountName
         }
-        Write-Host
-
-        $Selection  = (Read-Host "Select User") - 1
-        $samAccountName = $UserList.Value[$Selection].samAccountName
-
-        Return Get-ADUser $samAccountName
+        else
+        {
+            $User = $UserList.Value[0]
+        }
+        Return $User
     }
 
     $FirstName = ($Name -split " ")[0]
     $LastName = ($Name -split " ")[1]
 
-    $UserList = Get-UserList -FirstName $FirstName -LastName $LastName
+    [System.Collections.ArrayList] $UserList = 
+        @(Get-UserList -FirstName $FirstName -LastName $LastName)
+
     $User     = Select-User ([ref]$UserList)
 
     Return $User
+}
+
+
+Find-ADUser
