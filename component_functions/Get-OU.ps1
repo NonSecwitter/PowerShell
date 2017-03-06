@@ -5,8 +5,8 @@ Function Get-OU
     (
         [Parameter(Mandatory=$true,Position=0)]
         [Microsoft.ActiveDirectory.Management.ADAccount]
-        $User
+        $Acccount
     )
 
-    Return ($User.DistinguishedName -split 'CN=[^=]*,')
+    Return ($Account.DistinguishedName -split 'CN=[^=]*,')
 }
