@@ -1,5 +1,3 @@
-Function Find-ADUser
-{
     [CmdletBinding()]
     Param
     (
@@ -221,7 +219,9 @@ Function Find-ADUser
         Write-Host
 
         $Selection  = (Read-Host "Select User") - 1
-        Return $UserList.Value[$Selection]
+        $samAccountName = $UserList.Value[$Selection].samAccountName
+
+        Return Get-ADUser $samAccountName
     }
 
     $FirstName = ($Name -split " ")[0]
@@ -231,8 +231,3 @@ Function Find-ADUser
     $User     = Select-User ([ref]$UserList)
 
     Return $User
-}
-
-
-Find-ADUser
-
