@@ -8,5 +8,5 @@ Function Get-OU
         $Account
     )
 
-    Return ($Account.DistinguishedName -split 'CN=[^=]*,')
+    Return ($Account.DistinguishedName -split '^(?i)CN=[^=]*,')
 }
