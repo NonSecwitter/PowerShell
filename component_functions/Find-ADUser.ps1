@@ -224,13 +224,12 @@ Function Find-ADUser
             Write-Host
 
             $Selection  = (Read-Host "Select User") - 1
-            $samAccountName = $UserList.Value[$Selection].samAccountName
 
-            $User = Get-ADUser $samAccountName
+            $User = Get-ADUser $UserList.Value[$Selection].samAccountName
         }
         else
         {
-            $User = $UserList.Value[0]
+            $User = Get-ADUser $UserList.Value[0].SamAccountName
         }
         Return $User
     }
