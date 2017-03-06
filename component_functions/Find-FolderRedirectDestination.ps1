@@ -373,11 +373,7 @@ Function Find-FolderRedirectDestination
     }
 
     Elevate-Privilege
-
     $User = Find-ADUser
-
-    $OU = Get-OU $User
-
     $Destinations = Get-GPOs $User
 
     Return $Destinations
