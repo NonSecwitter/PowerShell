@@ -3,13 +3,9 @@ Function Find-ADUser
     [CmdletBinding()]
     Param
     (
-        [Parameter(Mandatory=$True)]
+        [Parameter(Mandatory=$True, Position=0)]
         [AllowEmptyString()]
-        $FirstName,
-
-        [Parameter(Mandatory=$True)]
-        [AllowEmptyString()]
-        $LastName
+        $Name
     )
 
     Function Get-LevDistance 
@@ -154,8 +150,8 @@ Function Find-ADUser
         {
             foreach ($User in $UserList.ToArray())
             {                                                            
-                $ADName1 = $UserList[$i].GivenName + $UserList[$i].Surname     
-                $ADName2 = $UserList[$i].SurName + $UserList[$i].Givenname     
+                $ADName1 = $User.GivenName + $User.Surname     
+                $ADName2 = $User.SurName   + $User.Givenname     
                 $distance1 = Get-LevDistance $ADName1 $SearchName        
                 $distance2 = Get-LevDistance $ADName2 $SearchName
 
@@ -190,10 +186,12 @@ Function Find-ADUser
         Param
         (
             [Parameter(Mandatory=$True)]
+            [AllowEmptyString()]
             [String]
             $FirstName,
 
             [Parameter(Mandatory=$False)]
+            [AllowEmptyString()]
             [String]
             $LastName
         )
@@ -226,6 +224,9 @@ Function Find-ADUser
         Return $UserList.Value[$Selection]
     }
 
+    $FirstName = ($Name -split " ")[0]
+    $LastName = ($Name -split " ")[1]
+
     $UserList = Get-UserList -FirstName $FirstName -LastName $LastName
     $User     = Select-User ([ref]$UserList)
 
@@ -234,3 +235,4 @@ Function Find-ADUser
 
 
 Find-ADUser
+
