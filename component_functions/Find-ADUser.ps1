@@ -108,11 +108,13 @@ Function Append-LevDistance
         [ref]$UserList,
 
         [Parameter(Mandatory=$true, Position=0)]
+        [AllowEmptyString()]
         [String]
         $FirstName,
 
         [Parameter(Mandatory=$true, Position=1)]
-        [Object]
+        [AllowEmptyString()]
+        [String]
         $LastName
     )
 
@@ -184,9 +186,11 @@ Function Get-UserList
     Param
     (
         [Parameter(Mandatory=$True)]
+        [String]
         $FirstName,
 
         [Parameter(Mandatory=$False)]
+        [String]
         $LastName
     )
 
@@ -224,9 +228,11 @@ Function Find-ADUser
     Param
     (
         [Parameter(Mandatory=$True, Position=0)]
+        [String]
         $FirstName,
 
         [Parameter(Mandatory=$False, Position=1)]
+        [String]
         $LastName
     )
 
