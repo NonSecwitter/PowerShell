@@ -183,12 +183,6 @@ Function Order-UserList
     }
 } 
 
-Function Generate-UserList
-{
-
-}
-
-
 Function Find-ADUser
 {
     [CmdletBinding()]
