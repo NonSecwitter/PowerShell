@@ -205,7 +205,22 @@ Function Generate-UserList
 
 Function Select-User
 {
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$True,Position=0)]
+        [ref]$UserList
+    )
+    
+    Write-Host
+    foreach ($User in $UserList.Value)
+    {
+        Write-Host ([array]::IndexOf($UserList.Value, $User)+1):: $User.Name
+    }
+    Write-Host
 
+    $Selection  = (Read-Host "Select User") - 1
+    Return $UserList.Value[$Selection]
 }
 
 Function Find-ADUser
@@ -213,27 +228,17 @@ Function Find-ADUser
     [CmdletBinding()]
     Param
     (
-        [Parameter(Mandatory=$True)]
+        [Parameter(Mandatory=$True, Position=0)]
         $FirstName,
 
-        [Parameter(Mandatory=$False)]
+        [Parameter(Mandatory=$False, Position=1)]
         $LastName
     )
 
     $UserList = Generate-UserList -FirstName $FirstName -LastName $LastName
+    $User     = Select-User ([ref]$UserList)
 
-
-
-    Write-Host
-    foreach ($User in $UserList)
-    {
-        Write-Host ([array]::IndexOf($UserList, $User)+1):: $User.Name
-    }
-    Write-Host
-
-    $Selection  = (Read-Host "Select User") - 1
-    
-    Return $UserList[$Selection]
+    Return $User
 }
 
 
