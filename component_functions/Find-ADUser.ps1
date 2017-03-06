@@ -213,24 +213,18 @@ Function Find-ADUser
             [Parameter(Mandatory=$True,Position=0)]
             [ref]$UserList
         )
-    
-        if($UserList.Value.Count -ne 1)
+        
+        Write-Host
+        foreach ($User in $UserList.Value)
         {
-            Write-Host
-            foreach ($User in $UserList.Value)
-            {
-                Write-Host ([array]::IndexOf($UserList.Value, $User)+1):: $User.Name
-            }
-            Write-Host
-
-            $Selection  = (Read-Host "Select User") - 1
-
-            $User = Get-ADUser $UserList.Value[$Selection].samAccountName
+            Write-Host ([array]::IndexOf($UserList.Value, $User)+1):: $User.Name
         }
-        else
-        {
-            $User = Get-ADUser $UserList.Value[0].SamAccountName
-        }
+        Write-Host
+
+        $Selection  = (Read-Host "Select User") - 1
+
+        $User = Get-ADUser $UserList.Value[$Selection].samAccountName
+
         Return $User
     }
 
