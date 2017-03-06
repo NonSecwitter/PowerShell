@@ -183,7 +183,7 @@ Function Order-UserList
     }
 } 
 
-Function Find-ADUser
+Function Generate-UserList
 {
     [CmdletBinding()]
     Param
@@ -200,6 +200,30 @@ Function Find-ADUser
     Append-LevDistance -UserList ([ref]$UserList) -FirstName $FirstName -LastName $LastName
     Order-UserList     -UserList ([ref]$UserList)
 
+    Return $UserList
+}
+
+Function Select-User
+{
+
+}
+
+Function Find-ADUser
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$True)]
+        $FirstName,
+
+        [Parameter(Mandatory=$False)]
+        $LastName
+    )
+
+    $UserList = Generate-UserList -FirstName $FirstName -LastName $LastName
+
+
+
     Write-Host
     foreach ($User in $UserList)
     {
@@ -207,8 +231,7 @@ Function Find-ADUser
     }
     Write-Host
 
-    $Selection  = Read-Host "Select User"
-    $Selection -= 1
+    $Selection  = (Read-Host "Select User") - 1
     
     Return $UserList[$Selection]
 }
