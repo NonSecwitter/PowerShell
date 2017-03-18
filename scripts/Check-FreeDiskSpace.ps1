@@ -68,10 +68,17 @@ Param
 $securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
 $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
 
+$winrm = Get-Service -Name "winrm"
+$winrmState = $winrm.Status
+$winrm | Start-Service
+
 $volumes = Get-CimInstance -ComputerName $ComputerName -ClassName CIM_LogicalDisk |
             Where-Object { $_.DriveType -in $DriveType} |
             Select-Object SystemName, DeviceID, VolumeName, Description, FileSystem,
             @{Name="PercentFree";Expression={[decimal]::Round(100*($_.FreeSpace/$_.Size),1)}}
+
+if ($winrmState -like "Stopped")
+{ $winrm | Stop-Service }
 
 $mailBody += $volumes | Out-String
 
