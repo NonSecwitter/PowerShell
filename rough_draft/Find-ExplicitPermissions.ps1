@@ -5,11 +5,12 @@ $Directories = Get-ChildItem -LiteralPath $RootDir -Attributes Directory -Recurs
 
 foreach($Directory in $Directories)
 {
-   $Directory | Where-Object { $_.GetAccessControl().Access.IsInherited -eq $false } | Select FullName | Out-File -Append $OutFile
+    If(($Directory.GetAccessControl().Access | Where-Object { $_.IsInherited -eq $false }).Count -gt 0)
+    {
+        $Directory.FullName | Out-File -Append $OutFile
+    }
 
-
-   $Directory.GetAccessControl().Access | Where-Object { $_.IsInherited -eq $false } | 
-       Select-Object @{Name="User/Group: "; Expression = {$_.IdentityReference}},FileSystemRights,AccessControlType |
+    $Directory.GetAccessControl().Access | Where-Object { $_.IsInherited -eq $false } | 
+        Select-Object @{Name="User/Group: "; Expression = {$_.IdentityReference}},FileSystemRights,AccessControlType |
         Out-File -Append $OutFile
-
 }
