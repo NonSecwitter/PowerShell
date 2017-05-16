@@ -1,3 +1,13 @@
+## Variables ##
+$DomainToJoin = ""
+$DomainUserName = ""
+$DomainPassword = ""
+
+$LocalAdmin = ""
+$LocalPassword = ""
+
+## End Variables. Begin functions ##
+
 # First, determine where Powershell thinks it is running the script from. #
 
 $ScriptPath = $myInvocation.InvocationName
@@ -73,8 +83,8 @@ function Set-ComputerName
 
 function Create-DomainCredential
 { $null = .{
-	$UserName   = ""
-	$Password   = "" | ConvertTo-SecureString -AsPlainText -Force 
+	$UserName   = $DomainUserName
+	$Password   = $DomainPassword | ConvertTo-SecureString -AsPlainText -Force 
 	$Credential = New-Object System.Management.Automation.PSCredential($UserName, $Password)
  }
  return $Credential
@@ -88,10 +98,10 @@ function Join-Domain
 
 	if (!$DomainJoined)
 	{	
-		$Domain     = ""
+		$Domain     = $DomainToJoin
 
-		$UserName   = ""
-		$Password   = ""
+		$UserName   = $LocalAdmin
+		$Password   = $LocalPassword
 		
 		$DomainJoin = 1
 		$CreateAccount = 2
@@ -156,6 +166,15 @@ function Set-AutoAdminLogon
 	}
 	
 	Set-ItemProperty -Path $WinLogonKey.PSPath -Name AutoAdminLogon -Value $Value
+}
+
+###############################
+
+function Set-AutoAdminPassword
+{
+	$WinLogonKey	= Get-Item "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\WinLogon"
+	
+	Set-ItemProperty -Path $WinLogonKey.PSPath -Name DefaultPassword -Value $LocalPassword
 }
 
 ###############################
@@ -266,6 +285,7 @@ function Remove-DriveLetter
 rundll32.exe user32.dll,LockWorkStation
 Set-AutoLogonCount
 Set-AutoAdminLogon
+Set-AutoAdminPassword
 Set-AdditionalRun
 
 $ComputerNameSet = Set-ComputerName
