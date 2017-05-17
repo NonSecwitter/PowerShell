@@ -8,6 +8,7 @@ function Enumerate-CIMNamespaces
     )
 
     $Children = Get-CimInstance -Namespace $CurrentNameSpace -ClassName "__NameSpace"
+    $NameSpaces = $null
 
     foreach($name in $Children)
     {
