@@ -12,7 +12,7 @@ function Enumerate-CIMNamespaces
     foreach($name in $Children)
     {
         $NameSpaces += @($CurrentNameSpace + "/" + $name.Name)
-        Enumerate-CIMNamespaces ($CurrentNameSpace + "/" + $name.Name)
+        $NameSpaces += Enumerate-CIMNamespaces ($CurrentNameSpace + "/" + $name.Name)
         
     }
 
