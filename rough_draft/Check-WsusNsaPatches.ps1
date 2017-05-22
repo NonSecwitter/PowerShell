@@ -1,3 +1,6 @@
+#Searches WSUS for the KB articles published by Microsoft to address the leaked NSA tools.
+#Will look for highest superseding update, and report status of that.
+
 clear
 function Get-SupersedingUpdate
 {
