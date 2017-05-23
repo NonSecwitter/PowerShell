@@ -4,6 +4,8 @@
 ## TODO // Textually demonstrate the chain of superceded updates from original patches
 ##         listed in Microsoft Security Bulletins to the highest superseding updates
 
+## TODO // Something similar for desktop users
+
 clear
 function Get-SupersedingUpdate
 {
