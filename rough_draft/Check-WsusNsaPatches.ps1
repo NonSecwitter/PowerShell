@@ -84,10 +84,6 @@ foreach($kb in $allKB)
    }
 }
 
-
-
-$wsus.GetSummariesPerUpdate($updateScope,$computerScope)
-
 clear
    foreach ($patch in $NSAPatches)
    {
