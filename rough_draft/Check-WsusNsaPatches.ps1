@@ -6,6 +6,8 @@
 
 ## TODO // Something similar for desktop users
 
+## TODO // Enumerate computers lacking "IsInstalled"/"NotNeeded" status
+
 clear
 function Get-SupersedingUpdate
 {
