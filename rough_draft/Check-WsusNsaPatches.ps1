@@ -30,6 +30,7 @@ function Get-SupersedingUpdate
             $superUpdates.Remove($super)
         }
     }
+    
     }
     return $superUpdates
 }
@@ -59,6 +60,8 @@ $allKB = @(4012598
  ,958644  )
 
 $updatescope = New-Object Microsoft.UpdateServices.Administration.UpdateScope
+$computerScope = New-Object Microsoft.UpdateServices.Administration.ComputerTargetScope
+
 $wsus = Get-WsusServer
 [Microsoft.UpdateServices.Administration.UpdateCollection]$NSAPatches = New-Object Microsoft.UpdateServices.Administration.UpdateCollection
 
@@ -81,11 +84,35 @@ foreach($kb in $allKB)
    }
 }
 
+
+
+$wsus.GetSummariesPerUpdate($updateScope,$computerScope)
+
 clear
    foreach ($patch in $NSAPatches)
    {
+    $kbNum = $patch.KnowledgeBaseArticles
+    Write-Host "`r`n"--------- KB$kbnum ---------
+
+
     $ComputerGroupStatus = $patch.GetSummaryPerComputerTargetGroup($true)
-    $patch | Select-Object ProductTitles,LegacyName,IsApproved,IsDeclined,State | sort LegacyName | Format-Table
-    $ComputerGroupStatus | Select-Object UnknownCount,NotApplicableCount,NotInstalledCount,DownloadedCount,InstalledCount,InstalledPendingRebootCount,FailedCount | Format-Table
+
+    $patch | Select-Object LegacyName,IsApproved,IsDeclined,State,
+            @{Name="SupersedesOthers";Expression={$_.HasSupersededUpdates}},
+            IsSuperseded | Format-Table
+ 
+    $ComputerGroupStatus |
+                     Select-Object @{Name="Group";Expression=`
+                     {($wsus.GetComputerTargetGroup($_.ComputerTargetGroupId)).Name}},
+                     UnknownCount,NotApplicableCount,NotInstalledCount,FailedCount |
+                     Format-Table
+                     
+
+    $ComputerGroupStatus |
+                     Select-Object @{Name="Group";Expression=`
+                     {($wsus.GetComputerTargetGroup($_.ComputerTargetGroupId)).Name}},
+                     DownloadedCount,InstalledCount,InstalledPendingRebootCount |
+                     #Format-Table
     pause
    }
+   
