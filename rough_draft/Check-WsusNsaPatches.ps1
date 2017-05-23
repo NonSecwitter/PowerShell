@@ -4,28 +4,36 @@
 clear
 function Get-SupersedingUpdate
 {
-    Param(
-    [Parameter(Mandatory=$true)]
-    [Microsoft.UpdateServices.Administration.IUpdate]$update
+    Param
+    (
+        [Parameter(Mandatory=$true, Position=0)]
+        [Microsoft.UpdateServices.Administration.IUpdate]$update
     )
-    $highest = $update
+    
+    $null = .{
+    [Microsoft.UpdateServices.Administration.UpdateCollection] $superUpdates = New-Object Microsoft.UpdateServices.Administration.UpdateCollection
+    
 
-    $higherUpdates = $null
-    $higherUpdates = $update.GetRelatedUpdates([Microsoft.UpdateServices.Administration.UpdateRelationship]::UpdatesThatSupersedeThisUpdate)
-
-    foreach($higher in $higherUpdates)
+    if (!$update.IsSuperseded)
     {
-        if($higher.IsSuperseded)
+        $superUpdates.Add($update)
+    }
+    else
+    {
+        $superUpdates.AddRange( $update.GetRelatedUpdates([Microsoft.UpdateServices.Administration.UpdateRelationship]::UpdatesThatSupersedeThisUpdate))
+        [Microsoft.UpdateServices.Administration.UpdateCollection] $temp = New-Object Microsoft.UpdateServices.Administration.UpdateCollection
+        $temp = $superUpdates
+        
+        foreach($super in $temp)
         {
-            $highest = Get-SupersedingUpdate $higher
-        }
-        else
-        {
-            $highest = $higher
+            $superUpdates.AddRange((Get-SupersedingUpdate $super))
+            $superUpdates.Remove($super)
         }
     }
-    return $highest
+    }
+    return $superUpdates
 }
+
 
 $allKB = @(4012598
  ,4012212
@@ -54,7 +62,7 @@ $updatescope = New-Object Microsoft.UpdateServices.Administration.UpdateScope
 $wsus = Get-WsusServer
 [Microsoft.UpdateServices.Administration.UpdateCollection]$NSAPatches = New-Object Microsoft.UpdateServices.Administration.UpdateCollection
 
-Write-Host "Compiling a list of Updates`r`nThis takes a while"
+Write-Host "Compiling a list of Updates`r`nThis takes a while because superseding udpates branch over time"
 foreach($kb in $allKB)
 {
    $updatescope.TextIncludes = $kb
@@ -62,15 +70,17 @@ foreach($kb in $allKB)
 
    foreach ($update in $kbUpdates)
    {
-      $update = Get-SupersedingUpdate $update
-
-      try
-      {
-        $NSAPatches.Add($update) > $null
-      }
-      catch{}
+    try
+    {
+      $NSAPatches.AddRange((Get-SupersedingUpdate $update))
+    }
+    catch [System.Management.Automation.MethodInvocationException]
+    {
+     #Write-Host $_
+    }
    }
 }
+
 clear
    foreach ($patch in $NSAPatches)
    {
