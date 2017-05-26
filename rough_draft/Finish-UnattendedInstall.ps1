@@ -8,6 +8,18 @@ $LocalPassword = ""
 
 ## End Variables. Begin functions ##
 
+#Lock mouse and keyboard so pesky users don't come along and interrupt
+$MethodDefinition = `
+@'
+    [DllImport("user32.dll")]
+    public static extern bool BlockInput(bool fBlockIt);
+'@
+
+$User32 = Add-Type -MemberDefinition $MethodDefinition -Name 'User32' -Namespace 'Win32' -PassThru
+$User32::BlockInput($true)
+
+[System.Windows.MessageBox]::Show("System Maintenance In Progress`r`n`r`nPlease Do Not Touch","IT Department")
+
 # First, determine where Powershell thinks it is running the script from. #
 
 $ScriptPath = $myInvocation.InvocationName
