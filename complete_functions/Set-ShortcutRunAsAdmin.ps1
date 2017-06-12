@@ -1,3 +1,6 @@
+# Updates whatever LNK file is passed as an argument to enable or disable
+# RunAs administrator.
+
 Function Set-ShortcutRunAsAdmin
 {
     [CmdletBinding()]
