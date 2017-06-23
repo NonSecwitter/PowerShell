@@ -1,31 +1,37 @@
-#####################################################################
-# Checks free space on logical drives as % of free space remaining. #
-# Sends E-Mail alert if free space is below specified threshold.    #
-# Be sure to specify e-mail related variables below.                #
-#                                                                   #
-# Based on WMI Object Win32_LogicalDisk Class                       #
-# https://msdn.microsoft.com/en-us/library/aa394173(v=vs.85).aspx   #
-#                                                                   #
-# Author and Copyright holder: Jonathon Anderson                    #
-#####################################################################
+<#
+    .SYNOPSIS
+         Checks free space on logical drives as % of free space remaining. 
+         Sends E-Mail alert if free space is below specified threshold.    
+         Be sure to specify e-mail related variables below.                
+                                                                   
+         Based on WMI Object Win32_LogicalDisk Class                       
+         https://msdn.microsoft.com/en-us/library/aa394173(v=vs.85).aspx   
+                                                                   
+        Author and Copyright holder: Jonathon Anderson
+    .PARAMETER
+    .EXAMPLE                
+#>
 
-[CmdletBinding()]
-Param
-    (
-    [Parameter(Position=0)]
-    [Alias("Name")]
-    [string]
-    $ComputerName = $env:COMPUTERNAME,
+function Check-FreeDiskSpace
+{
 
-    [Parameter(Position=1)]
-    [ValidateRange(1,100)]
-    [int]
-    $AlertBelowPercentFree = 5
-    
-    )
+    [CmdletBinding()]
+    Param
+        (
+        [Parameter(Position=0, Mandatory=$false, ValueFromPipeline=$true)]
+        [Alias("Name")]
+        [string]
+        $ComputerName = $env:COMPUTERNAME,
+
+        [Parameter(Position=1)]
+        [ValidateRange(1,100)]
+        [int]
+        $AlertBelowPercentFree = 5
+        )
+        begin{
 
     #
-    # Variables for volume selection 
+    # Variable for volume selection 
     #
     # This filtering may not work on non-windows systems.
     # Microsoft derived a Win32_LogicalDisk class from CIM_LogicalDisk.
@@ -51,45 +57,62 @@ Param
     # Note that if you use GMail, you need to "Enable Less Secure Apps" in your *ACCOUNT*
     # settings. This is in the settings under your picture, not your mailbox settings.
     #
-    $mailFrom    = ""
-    $mailTo      = ""
-    $mailUser    = ""
-    $mailPass    = ""
-    $mailServer  = ""
-    $mailPort    = ""
+    $mailFrom    = "sendmail@the-association.org"
+    $mailTo      = "janderson@the-association.org"
+    $mailUser    = "assoc\sendmail"
+    $mailPass    = "AIDmailsender#!309"
+    $mailServer  = "srv-exchange"
+    $mailPort    = "25"
     $mailSubject = "Low Disk Space"
     $mailBody    = "One or more disks is low on space.`r`n`r`n" + "System: $ComputerName"
 
 
-##########################################################################################
-################# You shouldn't need to edit anything below here. ########################
-##########################################################################################
+    ##########################################################################################
+    ################# You shouldn't need to edit anything below here. ########################
+    ##########################################################################################
 
-$securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
-$cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
-
-$winrm = Get-Service -Name "winrm"
-$winrmState = $winrm.Status
-$winrm | Start-Service
-
-$volumes = Get-CimInstance -ComputerName $ComputerName -ClassName CIM_LogicalDisk |
-            Where-Object { $_.DriveType -in $DriveType} |
-            Select-Object SystemName, DeviceID, VolumeName, Description, FileSystem,
-            @{Name="PercentFree";Expression={[decimal]::Round(100*($_.FreeSpace/$_.Size),1)}}
-
-if ($winrmState -like "Stopped")
-{ $winrm | Stop-Service }
-
-$mailBody += $volumes | Out-String
-
-if($volumes.PercentFree -lt $AlertBelowPercentFree)
-{
-    if ($mailPort -in (465,587))
-    {
-        Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo -Port $mailPort -UseSsl
+    $securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
+    $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
     }
-    else
-    {
-        Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo
+
+    process{
+        foreach($computer in $ComputerName)
+        {
+
+            if(Test-Connection $ComputerName -Count 1 -ErrorAction SilentlyContinue)
+            {
+                $session = New-PSSession -ComputerName $ComputerName
+
+                $volumes = Invoke-Command -Session $session -ScriptBlock { 
+
+                                Get-WmiObject -Class Win32_LogicalDisk |
+                                    Where-Object { $_.DriveType -eq 3} |
+                                    Select-Object SystemName, DeviceID, VolumeName, Description, FileSystem,
+                                    @{Name="PercentFree";Expression={[decimal]::Round(100*($_.FreeSpace/$_.Size),1)}}
+                                }
+
+                Remove-PSSession -Session $session
+
+                $mailBody += $volumes | Out-String
+
+                #if($volumes.PercentFree -lt $AlertBelowPercentFree)
+                if($true)
+                {
+                    if ($mailPort -in (465,587))
+                    {
+                        #Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo -Port $mailPort -UseSsl
+                        Write-Host $mailBody
+                    }
+                    else
+                    {
+                        Write-Host $mailBody
+                        #Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo
+                    }
+                }
+            }
+        }
     }
+    end{}
 }
+
+clear
