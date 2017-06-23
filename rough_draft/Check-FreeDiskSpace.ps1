@@ -12,12 +12,14 @@
     .EXAMPLE                
 #>
 
+## TODO: Error handling, Message Formatting
+
 function Check-FreeDiskSpace
 {
 
     [CmdletBinding()]
     Param
-        (
+    (
         [Parameter(Position=0, Mandatory=$false, ValueFromPipeline=$true)]
         [Alias("Name")]
         [string]
@@ -27,55 +29,58 @@ function Check-FreeDiskSpace
         [ValidateRange(1,100)]
         [int]
         $AlertBelowPercentFree = 5
-        )
-        begin{
+    )
 
-    #
-    # Variable for volume selection 
-    #
-    # This filtering may not work on non-windows systems.
-    # Microsoft derived a Win32_LogicalDisk class from CIM_LogicalDisk.
-    # Win32 version contains "DriveType" as below, but CIM does not.
-    #
+    begin
+    {
+
+        #
+        # Variable for volume selection 
+        #
+        # This filtering may not work on non-windows systems.
+        # Microsoft derived a Win32_LogicalDisk class from CIM_LogicalDisk.
+        # Win32 version contains "DriveType" as below, but CIM does not.
+        #
         
-    # logical drive type in comma separated array 
-    # (0) Unknown
-    # (1) No Root Directory
-    # (2) Removable Disk
-    # (3) Local Disk
-    # (4) Network Drive
-    # (5) Compact Disk
-    # (6) RAM Disk
-    $DriveType   = (3)
+        # logical drive type in comma separated array 
+        # (0) Unknown
+        # (1) No Root Directory
+        # (2) Removable Disk
+        # (3) Local Disk
+        # (4) Network Drive
+        # (5) Compact Disk
+        # (6) RAM Disk
+        $DriveType   = (3)
 
-    #
-    # Variables for e-mail notification. 
-    #
-    # If your mail server requires TLS, specify port 587 (TLS) or 465 (less secure SSL)
-    # otherwise, leave it blank.
-    #
-    # Note that if you use GMail, you need to "Enable Less Secure Apps" in your *ACCOUNT*
-    # settings. This is in the settings under your picture, not your mailbox settings.
-    #
-    $mailFrom    = ""
-    $mailTo      = ""
-    $mailUser    = ""
-    $mailPass    = ""
-    $mailServer  = ""
-    $mailPort    = ""
-    $mailSubject = "Low Disk Space"
-    $mailBody    = "One or more disks is low on space.`r`n`r`n" + "System: $ComputerName"
+        #
+        # Variables for e-mail notification. 
+        #
+        # If your mail server requires TLS, specify port 587 (TLS) or 465 (less secure SSL)
+        # otherwise, leave it blank.
+        #
+        # Note that if you use GMail, you need to "Enable Less Secure Apps" in your *ACCOUNT*
+        # settings. This is in the settings under your picture, not your mailbox settings.
+        #
+        $mailFrom    = ""
+        $mailTo      = ""
+        $mailUser    = ""
+        $mailPass    = ""
+        $mailServer  = ""
+        $mailPort    = ""
+        $mailSubject = "Low Disk Space"
+        $mailBody    = "One or more disks is low on space.`r`n`r`n" + "System: $ComputerName"
 
 
-    ##########################################################################################
-    ################# You shouldn't need to edit anything below here. ########################
-    ##########################################################################################
+        ##########################################################################################
+        ################# You shouldn't need to edit anything below here. ########################
+        ##########################################################################################
 
-    $securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
-    $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
+        $securePass  = ConvertTo-SecureString $mailPass -AsPlainText -Force
+        $cred        = New-Object System.Management.Automation.PSCredential($mailUser,$securePass)
     }
 
-    process{
+    process
+    {
         foreach($computer in $ComputerName)
         {
 
@@ -93,26 +98,24 @@ function Check-FreeDiskSpace
 
                 Remove-PSSession -Session $session
 
-                $mailBody += $volumes | Out-String
-
-                #if($volumes.PercentFree -lt $AlertBelowPercentFree)
-                if($true)
+                if($volumes.PercentFree -lt $AlertBelowPercentFree)
                 {
-                    if ($mailPort -in (465,587))
-                    {
-                        #Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo -Port $mailPort -UseSsl
-                        Write-Host $mailBody
-                    }
-                    else
-                    {
-                        Write-Host $mailBody
-                        #Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo
-                    }
+                    $mailBody += $volumes | Out-String
                 }
             }
         }
     }
-    end{}
+    end
+    {
+        if ($mailPort -in (465,587))
+        {
+            Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo -Port $mailPort -UseSsl
+        }
+        else
+        {
+            Send-MailMessage -Body $mailBody -Credential $cred -From $mailFrom -SmtpServer $mailServer -Subject $mailSubject -To $mailTo
+        }
+    }
 }
 
 clear
