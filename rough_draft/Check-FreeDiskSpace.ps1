@@ -91,7 +91,7 @@ function Check-FreeDiskSpace
                 $volumes = Invoke-Command -Session $session -ScriptBlock { 
 
                                 Get-WmiObject -Class Win32_LogicalDisk |
-                                    Where-Object { $_.DriveType -eq 3} |
+                                    Where-Object { $_.DriveType -eq $Using:DriveType} |
                                     Select-Object SystemName, DeviceID, VolumeName, Description, FileSystem,
                                     @{Name="PercentFree";Expression={[decimal]::Round(100*($_.FreeSpace/$_.Size),1)}}
                                 }
@@ -117,5 +117,3 @@ function Check-FreeDiskSpace
         }
     }
 }
-
-clear
