@@ -68,7 +68,7 @@ function Check-FreeDiskSpace
         $mailServer  = ""
         $mailPort    = ""
         $mailSubject = "Low Disk Space"
-        $mailBody    = "One or more disks is low on space.`r`n`r`n" + "System: $ComputerName"
+        $mailBody    = "One or more disks is low on space.`r`n`r`n" + "Run From: $ComputerName"
 
 
         ##########################################################################################
