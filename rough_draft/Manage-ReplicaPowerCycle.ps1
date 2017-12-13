@@ -47,10 +47,8 @@ function Manage-ReplicaPowerCycle
         $HVservers.AddRange(@($Replicas.ReplicaServer.ToUpper() | Select-Object -Unique))
         $HVServers.Remove($LocalHost)
 
-        $HVServers
-
-        #Get-VMReplication | Suspend-VMReplication
-        #Invoke-Command -ComputerName $HVServers -ScriptBlock { Get-VMReplication | Suspend-VMReplication }
+        Get-VMReplication | Suspend-VMReplication
+        Invoke-Command -ComputerName $HVServers -ScriptBlock { Get-VMReplication | Suspend-VMReplication }
     }
 
     END {}
