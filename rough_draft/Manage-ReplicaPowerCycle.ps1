@@ -18,7 +18,7 @@
     .PARAMETER
     .EXAMPLE
     .TODO
-        Are $VMReplica.PrimaryServer and $VMReplica.ReplicaServer always FQDN?
+       Are $VMReplica.PrimaryServer and $VMReplica.ReplicaServer always FQDN?
 #>
 
 #function Manage-ReplicaPowerCycle
@@ -47,16 +47,13 @@
 
         $HVServers.AddRange(@($Replicas.PrimaryServer.ToUpper() | Select-Object -Unique))
         $HVservers.AddRange(@($Replicas.ReplicaServer.ToUpper() | Select-Object -Unique))
-        $HVServers.Remove($LocalHost)
 
         if($SuspendReplication)
         {
-            Get-VMReplication | Suspend-VMReplication
             Invoke-Command -ComputerName $HVServers -ScriptBlock { Get-VMReplication | Suspend-VMReplication }
         }
         elseif($ResumeReplication)
         {
-            Get-VMReplication | Resume-VMReplication
             Invoke-Command -ComputerName $HVServers -ScriptBlock { Get-VMReplication | Resume-VMReplication }
         }
     }
