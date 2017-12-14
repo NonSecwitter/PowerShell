@@ -39,14 +39,14 @@
     {
         $LocalHost = (Get-WmiObject Win32_ComputerSystem).DNSHostName+"."+(Get-WmiObject Win32_ComputerSystem).Domain
 
-        $LocalHost = $LocalHost.ToUpper()
-
         [System.Collections.ArrayList] $HVServers = @()
 
         $Replicas = Get-VMReplication -ComputerName $LocalHost
 
-        $HVServers.AddRange(@($Replicas.PrimaryServer.ToUpper() | Select-Object -Unique))
-        $HVservers.AddRange(@($Replicas.ReplicaServer.ToUpper() | Select-Object -Unique))
+        $HVServers.AddRange(@($Replicas.PrimaryServer))
+        $HVservers.AddRange(@($Replicas.ReplicaServer))
+        
+        $HVServers = $HVServers | Select-Object -Unique
 
         if($SuspendReplication)
         {
