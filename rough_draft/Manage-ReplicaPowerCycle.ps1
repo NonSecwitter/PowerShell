@@ -18,8 +18,7 @@
     .PARAMETER
     .EXAMPLE
     .TODO
-       Test
-       Are $VMReplica.PrimaryServer and $VMReplica.ReplicaServer always FQDN?
+        Are $VMReplica.PrimaryServer and $VMReplica.ReplicaServer always FQDN?
 #>
 
 #function Manage-ReplicaPowerCycle
@@ -43,7 +42,6 @@
         $LocalHost = $LocalHost.ToUpper()
 
         [System.Collections.ArrayList] $HVServers = @()
-        $HVServers.Clear()
 
         $Replicas = Get-VMReplication -ComputerName $LocalHost
 
