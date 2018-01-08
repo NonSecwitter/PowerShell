@@ -4,7 +4,7 @@
     .COPYRIGHT 
         Jonathon Anderson
     .SYNOPSIS
-        Sync-RedirectedFolders aids in user termination by polling Active Directory
+        Archive-RedirectedFolders aids in user termination by polling Active Directory
         for current users and comparing them to folders in your redirected folders
         repository. Folders that do not have an associated user in Active Directory
         are then migrated to your long term storage or deleted.
