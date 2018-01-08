@@ -12,7 +12,6 @@
         The user account used to run this script currently needs permissions to:
             1) Create remote session with DC (specifically GC)
             2) Execute Get-ADUser on DC
-            3) Create remote session with Archive Repo
             4) Read/Delete in Redirected Folders Repo ("Move" requires "Delete")
             6) Read/Write in Archive Repo
 
