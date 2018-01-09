@@ -10,8 +10,8 @@
     .TODO
 #>
 
-#function Function-Name
-#{
+function Function-Name
+{
     [CmdletBinding()]
     Param ()
 
@@ -20,4 +20,6 @@
     PROCESS {}
 
     END {}
-#}
+}
+
+Function-Name
