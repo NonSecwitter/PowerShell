@@ -1,2 +1,0 @@
-- Swap-ArrayElements
-  --Accepts an array and two indices to swap them without destroying either value.
