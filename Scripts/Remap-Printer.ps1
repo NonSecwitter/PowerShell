@@ -67,6 +67,8 @@ function Remap-Printer
             {
                 if($NewPrinter.ShareName -eq $OldPrinter.ShareName)
                 {
+                    if($OldPrinter.Default -eq $true){$Return = $NewPrinter.SetDefaultPrinter()}
+                    
                     $OldPrinter.Delete()
                 }
             }
