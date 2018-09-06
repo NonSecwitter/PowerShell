@@ -1,10 +1,8 @@
 [String]$LogfileName = ""
-$UninstallerExe = ""
-
+[String]$UninstallerPath = ""
+[String]$Logfile = "$env:Temp\$LogfileName.log"
 
 ## End Variables
-
-[String]$Logfile = "$env:Temp\$LogfileName.log"
 
 Function Write-Log
 {
@@ -19,26 +17,25 @@ Function Write-Log
     $WriteLine = (Get-Date).ToString() + " " + $logstring
     Add-content $Logfile -value $WriteLine
 }
+Write-Log "---- Start Script Execution ----"
+Write-Log "Logged on User: $env:USERNAME"
+Write-Log "Search string: $UninstallerPath"
 
-$User = gwmi win32_computersystem -Property Username
-$UserName = $User.UserName
-$UserSplit = $User.UserName.Split("\")
+
 
 # Parameter to Log
-Write-Log "Start Script Execution"
-Write-Log "Logged on User: $UserName"
-Write-Log "Detection-String: $UninstallerExe"
-If (Test-Path $UninstallerExe)
+
+If (Test-Path $UninstallerPath)
 {
-    Write-Log "Found DetectionFile"
-    $UninstallerExe = Get-Item $UninstallerExe
-    Write-Log "Get File Details"
-    Write-Log "Version found: $($MSTeams.VersionInfo.FileVersion)"
-    Write-Log "Script Exectuion End!"
-    Write-Log ""
+    [System.IO.FileSystemInfo]$UninstallerExe = Get-Item $UninstallerPath
+
+    Write-Log "Found:  $UninstallerExe"
+    Write-Log "Version: $($UninstallerExe.VersionInfo.FileVersion)"
+    Write-Log "----END----"
     Return $true
 }
 Else
 {
     Write-Log "Warning: Uninstaller not found – need to install App!"
+    Write-Log "----END----"
 }
