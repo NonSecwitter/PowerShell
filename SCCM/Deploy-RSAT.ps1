@@ -42,6 +42,8 @@
 		[string]$installPhase = 'Uninstallation'
 		
 		# <Perform Uninstallation tasks here>
+		        New-EventLog -LogName "SCCM_Custom" -Source "AppPackage_RSAT" -ErrorAction SilentlyContinue
+
         
         # EasyRemove features can be uninstalled immediately.
         # The remaining RSAT features are a dependency for EasyRemove features.
